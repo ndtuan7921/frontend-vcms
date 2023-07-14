@@ -8,8 +8,10 @@ import {
   Typography,
 } from "@mui/material";
 import Image from "next/image";
+import defaultThumbnail from "../assets/images/thumbnail_default.jpg";
 import React from "react";
 import { CONTENT_SERVICE_URL } from "../../env.config";
+import formattedDate from "../utils/formatDate";
 
 const TypoWrapper = styled(Box)(({ theme }) => ({
   margin: "1rem 0",
@@ -34,7 +36,7 @@ export interface VideoCardProps {
 function VideoCard(props: VideoCardProps) {
   const srcImage = props.transcodeDone
     ? `${props.transcodeDone && CONTENT_SERVICE_URL + props.thumbnailUrl}`
-    : "";
+    : defaultThumbnail;
   return (
     <>
       <ListItemButtonWrapper>
@@ -49,7 +51,9 @@ function VideoCard(props: VideoCardProps) {
             <Typography variant="h6">{props.description}</Typography>
           </TypoWrapper>
           <TypoWrapper>
-            <Typography variant="subtitle1">{props.createdAt}</Typography>
+            <Typography variant="subtitle1">
+              {formattedDate(props.createdAt)}
+            </Typography>
           </TypoWrapper>
         </ListItemText>
       </ListItemButtonWrapper>

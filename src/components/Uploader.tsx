@@ -1,7 +1,7 @@
 import { Uppy, UppyFile } from "@uppy/core";
 import { Dashboard } from "@uppy/react";
 import Tus from "@uppy/tus";
-import React, { Dispatch, SetStateAction } from "react";
+import React, { Dispatch, SetStateAction, useEffect } from "react";
 import { UPLOAD_SERVICE_URL } from "../../env.config";
 
 const TUS_ENDPOINT = "https://tusd.tusdemo.net/files/";
@@ -32,10 +32,19 @@ const uppy = new Uppy({
 interface UploaderProps {
   handleUpload: Dispatch<SetStateAction<boolean>>;
   handleVideoData: Dispatch<SetStateAction<object>>;
+  isSubmitted: boolean;
+  setIsSubmitted: Dispatch<SetStateAction<boolean>>;
 }
 
 function Uploader(props: UploaderProps) {
-  const { handleUpload, handleVideoData } = props;
+  const { handleUpload, handleVideoData, isSubmitted, setIsSubmitted } = props;
+
+  useEffect(() => {
+    if (isSubmitted) {
+      uppy.cancelAll();
+      setIsSubmitted(false);
+    }
+  }, [isSubmitted, setIsSubmitted]);
 
   uppy.on("file-added", (file) => {
     uppy.setFileMeta(file.id, {

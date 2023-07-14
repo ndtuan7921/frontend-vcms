@@ -51,14 +51,11 @@ function VideoDetailPage() {
     playerRef.current?.seekTo(seconds);
   };
   // console.log(videoData);
-  // const url = videoData?.transcodeDone
-  //   ? `${CONTENT_SERVICE_URL + videoData.manifestUrl}`
-  //   : `${CONTENT_SERVICE_URL + videoData!.videoUrl}`;
 
   console.log(url);
   return (
     <Container>
-      {videoData && (
+      {videoData ? (
         <>
           <Player url={url} playerRef={playerRef} />
           <Stack spacing={1} mb={4} mt={4}>
@@ -69,6 +66,8 @@ function VideoDetailPage() {
             <ProductAds handleClick={handleButtonClick} />
           </Stack>
         </>
+      ) : (
+        <Typography variant="h5">Not found videoData</Typography>
       )}
     </Container>
   );

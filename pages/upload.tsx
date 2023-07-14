@@ -6,7 +6,7 @@ import styled from "@emotion/styled";
 import Uploader from "../src/components/Uploader";
 import "@uppy/core/dist/style.min.css";
 import "@uppy/dashboard/dist/style.min.css";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { CONTENT_SERVICE_URL } from "../env.config";
 
 const FormfieldWrapper = styled(Box)(({ theme }) => ({
@@ -14,30 +14,60 @@ const FormfieldWrapper = styled(Box)(({ theme }) => ({
 }));
 
 export default function Upload() {
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
+  // const [title, setTitle] = useState("");
+  // const [description, setDescription] = useState("");
+  const titleRef = useRef<HTMLInputElement | null>(null);
+  const descriptionRef = useRef<HTMLInputElement | null>(null);
   const [isVideoUploaded, setIsVideoUploaded] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
   const [videoData, setVideoData] = useState({});
 
   console.log(videoData);
 
-  const handleSubmit = (event: any) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    fetch(`${CONTENT_SERVICE_URL}/api/videos`, {
-      method: "POST",
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        title: title,
-        description: description,
-        ...videoData,
-      }),
-    })
-      .then((res) => res.json())
-      .then((res) => console.log(res));
+
+    const title = titleRef.current?.value;
+    const description = descriptionRef.current?.value;
+
+    if (!title || !description) {
+      console.error("Title and description are required");
+      return;
+    }
+
+    try {
+      const response = await fetch(`${CONTENT_SERVICE_URL}/api/videos`, {
+        method: "POST",
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          title: title,
+          description: description,
+          ...videoData,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to upload video");
+      }
+
+      // Reset form values
+      // setTitle("");
+      // setDescription("");
+      setIsSubmitted((state) => !state);
+      titleRef.current!.value = "";
+      descriptionRef.current!.value = "";
+      setIsVideoUploaded(false);
+      setVideoData({});
+
+      alert("Video uploaded successfully!");
+    } catch (error) {
+      console.error("Error uploading video:", error);
+    }
   };
+
   return (
     <Container maxWidth="lg">
       <form onSubmit={handleSubmit}>
@@ -61,8 +91,9 @@ export default function Upload() {
                   id="outlined-basic"
                   label="Title"
                   variant="outlined"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
+                  // value={title}
+                  // onChange={(e) => setTitle(e.target.value)}
+                  inputRef={titleRef}
                   required
                   fullWidth
                 />
@@ -72,8 +103,9 @@ export default function Upload() {
                   id="outlined-basic"
                   label="Description"
                   variant="outlined"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
+                  // value={description}
+                  // onChange={(e) => setDescription(e.target.value)}
+                  inputRef={descriptionRef}
                   fullWidth
                 />
               </FormfieldWrapper>
@@ -82,6 +114,8 @@ export default function Upload() {
             <Uploader
               handleUpload={setIsVideoUploaded}
               handleVideoData={setVideoData}
+              isSubmitted={isSubmitted}
+              setIsSubmitted={setIsSubmitted}
             />
           </Stack>
 
