@@ -24,6 +24,7 @@ interface VideoDataProps {
 function VideoDetailPage() {
   const playerRef = useRef<any>();
   const [videoData, setVideoData] = useState<VideoDataProps>();
+  const [url, setUrl] = useState("");
   const router = useRouter();
 
   useEffect(() => {
@@ -36,6 +37,11 @@ function VideoDetailPage() {
         const json = await data.json();
         console.log(json);
         setVideoData(json);
+        setUrl(
+          json.transcodeDone
+            ? `${CONTENT_SERVICE_URL + json.manifestUrl}`
+            : `${CONTENT_SERVICE_URL + json.videoUrl}`
+        );
       }
     };
     fetchData().catch(console.error);
@@ -45,19 +51,25 @@ function VideoDetailPage() {
     playerRef.current?.seekTo(seconds);
   };
   // console.log(videoData);
-  const videoUrl = videoData?.transcodeDone
-    ? `${CONTENT_SERVICE_URL + videoData.manifestUrl}`
-    : null;
+  // const url = videoData?.transcodeDone
+  //   ? `${CONTENT_SERVICE_URL + videoData.manifestUrl}`
+  //   : `${CONTENT_SERVICE_URL + videoData!.videoUrl}`;
+
+  console.log(url);
   return (
     <Container>
-      <Player url={videoUrl} playerRef={playerRef} />
-      <Stack spacing={1} mb={4} mt={4}>
-        <Typography variant="h4">{videoData?.title}</Typography>
-        <Typography variant="body1">{videoData?.description}</Typography>
-      </Stack>
-      <Stack>
-        <ProductAds handleClick={handleButtonClick} />
-      </Stack>
+      {videoData && (
+        <>
+          <Player url={url} playerRef={playerRef} />
+          <Stack spacing={1} mb={4} mt={4}>
+            <Typography variant="h4">{videoData?.title}</Typography>
+            <Typography variant="body1">{videoData?.description}</Typography>
+          </Stack>
+          <Stack>
+            <ProductAds handleClick={handleButtonClick} />
+          </Stack>
+        </>
+      )}
     </Container>
   );
 }

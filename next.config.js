@@ -2,9 +2,10 @@
 module.exports = {
   reactStrictMode: true,
   images: {
+    domains: ["localhost"],
     remotePatterns: [
       {
-        protocol: "http",
+        protocol: "https",
         hostname: "**",
         port: "",
       },
