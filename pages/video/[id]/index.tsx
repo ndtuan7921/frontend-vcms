@@ -44,8 +44,10 @@ function VideoDetailPage() {
         );
       }
     };
-    fetchData().catch(console.error);
-  }, []);
+    if (router.isReady) {
+      fetchData().catch(console.error);
+    }
+  }, [router]);
 
   const handleButtonClick = (seconds: number) => {
     playerRef.current?.seekTo(seconds);
