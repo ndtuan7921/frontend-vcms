@@ -1,127 +1,15 @@
 import dynamic from "next/dynamic";
-import React, { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/router";
+import { useEffect, useRef, useState } from "react";
 
 const Player = dynamic(() => import("../src/components/Player"), {
   ssr: false,
 });
-const ReactPlayer = dynamic(() => import("react-player"), {
-  ssr: false,
-});
 
-// function test() {
-//   const [selectedResolution, setSelectedResolution] = useState<string | null>(
-//     null
-//   );
-//   const [resolutions, setResolutions] = useState<any>([]);
-//   const playerRef = useRef<ReactPlayer | null>(null);
+const baseUrl =
+  "https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.ism/";
 
-//   useEffect(() => {
-//     const fetchM3u8Data = async () => {
-//       try {
-//         const response = await fetch(
-//           "https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.ism/.m3u8"
-//         );
-//         const m3u8Content = await response.text();
-//         const resolutionData = parseResolutionData(m3u8Content);
-//         setResolutions(resolutionData);
-//       } catch (error) {
-//         console.error("Error fetching m3u8 data:", error);
-//       }
-//     };
-
-//     fetchM3u8Data();
-//   }, []);
-
-//   const parseResolutionData = (m3u8Content: string) => {
-//     const resolutionRegex = /RESOLUTION=(\d+x\d+)/g;
-//     const matches = m3u8Content.match(resolutionRegex);
-
-//     if (matches) {
-//       return matches.map((match) => {
-//         const resolution = match.split("=")[1];
-//         return {
-//           label: resolution,
-//           value: resolution,
-//         };
-//       });
-//     }
-
-//     return [];
-//   };
-
-//   const handlePlayerReady = () => {
-//     if (playerRef.current) {
-//       playerRef.current.seekTo(0); // Reset player to the beginning
-//     }
-//   };
-
-//   const handleResolutionChange = (resolution: string) => {
-//     setSelectedResolution(resolution);
-//   };
-
-//   const renderResolutionOptions = () => {
-//     return resolutions.map((resolution, index) => (
-//       <option key={index} value={resolution.value}>
-//         {resolution.label}
-//       </option>
-//     ));
-//   };
-
-//   console.log(resolutions);
-
-//   const hlsConfig = {
-//     level: {
-//       manual: {
-//         level: selectedResolution,
-//       },
-//     },
-//   };
-//   const onChangeBitrate = (event) => {
-//     const internalPlayer = playerRef.current?.getInternalPlayer("hls");
-//     if (internalPlayer) {
-//       // currentLevel expect to receive an index of the levels array
-//       internalPlayer.currentLevel = event.target.value;
-//     }
-//   };
-//   return (
-//     <div>
-//       <select
-//         value={selectedResolution || ""}
-//         onChange={(e) => handleResolutionChange(e.target.value)}
-//       >
-//         <option value="">Select Resolution</option>
-//         {renderResolutionOptions()}
-//       </select>
-//       Quality:
-//       <select onChange={onChangeBitrate}>
-//         {playerRef.current
-//           ?.getInternalPlayer("hls")
-//           ?.levels.map((level, id) => (
-//             <option key={id} value={id}>
-//               {level.bitrate}
-//             </option>
-//           ))}
-//       </select>
-//       <Player
-//         url="https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.ism/playlist_360p.m3u8"
-//         playerRef={playerRef}
-//         width="100%"
-//         height="auto"
-//         config={{
-//           file: {
-//             attributes: {
-//               crossOrigin: "true",
-//               controlsList: "nodownload",
-//               type: "application/x-mpegURL",
-//             },
-//           },
-//           hlsjsConfig: hlsConfig,
-//         }}
-//         onReady={handlePlayerReady}
-//       />
-//     </div>
-//   );
-// }
+const m3u8URL = baseUrl + ".m3u8";
 
 function test() {
   const [masterPlaylist, setMasterPlaylist] = useState<any>(null);
@@ -135,12 +23,10 @@ function test() {
 
   const fetchMasterPlaylist = async () => {
     try {
-      const response = await fetch(
-        "https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.ism/.m3u8"
-      );
+      const response = await fetch(m3u8URL);
       const playlist = await response.text();
       setMasterPlaylist(parseMasterPlaylist(playlist));
-      setSelectedResolution(parseMasterPlaylist(playlist)[0].resolution); // Select the first resolution by default
+      setSelectedResolution(parseMasterPlaylist(playlist)[0]); // Select the first resolution by default
     } catch (error) {
       console.error("Error fetching master playlist:", error);
     }
@@ -148,15 +34,21 @@ function test() {
 
   const parseMasterPlaylist = (playlist) => {
     const lines = playlist.split("\n");
-    const resolutions = [];
+    const resolutions: any[] = [];
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim();
 
       if (line.startsWith("#EXT-X-STREAM-INF")) {
         const resolutionMatch = line.match(/RESOLUTION=(\d+x\d+)/);
-        const resolution = resolutionMatch ? resolutionMatch[1] : "Unknown";
-        resolutions.push({ resolution, uri: lines[i + 1] });
+        const resolution = resolutionMatch ? resolutionMatch[1] : null;
+
+        if (
+          resolution &&
+          !resolutions.some((item) => item.resolution === resolution)
+        ) {
+          resolutions.push({ resolution, uri: lines[i + 1] });
+        }
       }
     }
 
@@ -165,30 +57,32 @@ function test() {
 
   const handleResolutionChange = (resolution) => {
     setSelectedResolution(resolution);
-    setCurrentTime(playerRef.current?.getCurrentTime());
+    playerRef.current.getCurrentTime() &&
+      setCurrentTime(playerRef.current.getCurrentTime());
   };
 
-  console.log("currentTime\n", currentTime);
-  const baseUrl =
-    "https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.ism/";
+  console.log({ masterPlaylist, selectedResolution, currentTime });
 
   return (
     <div>
       <Player
-        url={selectedResolution ? baseUrl + selectedResolution.uri : ""}
+        url={
+          selectedResolution !== null
+            ? baseUrl + selectedResolution.uri
+            : m3u8URL
+        }
         playerRef={playerRef}
         controls
-        // playing
-        onReady={() => playerRef.current?.seekTo(Math.round(currentTime))}
-        // onReady={() => playerRef.current?.seekTo(30)}
+        playing
+        onStart={() => playerRef.current?.seekTo(currentTime)}
       />
       <div>
         {masterPlaylist &&
-          masterPlaylist.map((item, index) => (
+          masterPlaylist.map((item) => (
             <button
-              key={index}
+              key={item.uri}
               onClick={() => handleResolutionChange(item)}
-              disabled={item === selectedResolution}
+              disabled={item.uri === selectedResolution.uri}
             >
               {item.resolution}
             </button>

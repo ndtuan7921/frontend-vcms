@@ -7,6 +7,7 @@ import Tus from "@uppy/tus";
 import * as webvtt from "node-webvtt";
 import "@uppy/core/dist/style.min.css";
 import "@uppy/dashboard/dist/style.min.css";
+import { CONTENT_SERVICE_URL } from "../../env.config";
 
 const uppy = new Uppy({
   debug: true,
@@ -71,6 +72,13 @@ function ProductAds(props: any) {
     const modifiedSubtitleBlob = new Blob([modifiedSubtitleContent], {
       type: "text/vtt",
     });
+    const modifiedSubtitleFile = new File(
+      [modifiedSubtitleContent],
+      "subtitles.vtt",
+      {
+        type: "text/vtt",
+      }
+    );
     const downloadLink = URL.createObjectURL(modifiedSubtitleBlob);
     const a = document.createElement("a");
     a.href = downloadLink;
@@ -82,7 +90,7 @@ function ProductAds(props: any) {
     formData.append("subtitleFile", modifiedSubtitleBlob, "subtitles.vtt");
     try {
       // Send the FormData to the backend using fetch
-      const response = await fetch("/api/upload", {
+      const response = await fetch(`${CONTENT_SERVICE_URL}/api/vtts/upload`, {
         method: "POST",
         headers: {
           "Content-Type": "text/vtt",

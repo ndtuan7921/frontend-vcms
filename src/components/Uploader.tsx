@@ -26,7 +26,7 @@ const uppy = new Uppy({
     return modifiedFile;
   },
 }).use(Tus, {
-  endpoint: TUS_ENDPOINT,
+  endpoint: UPLOAD_SERVICE_URL + "/upload",
 });
 
 interface UploaderProps {
