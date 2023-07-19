@@ -63,12 +63,6 @@ export default function Upload() {
       return;
     }
 
-    // filename, fileid, thumbnail (file)
-    formData.append("fileName", videoData.fileName);
-    formData.append("fileId", videoData.fileId);
-    formData.append("title", title);
-    formData.append("description", description);
-
     try {
       const response = await fetch(`${CONTENT_SERVICE_URL}/api/videos`, {
         method: "POST",

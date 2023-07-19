@@ -34,8 +34,8 @@ export interface VideoCardProps {
 }
 
 function VideoCard(props: VideoCardProps) {
-  const srcImage = props.transcodeDone
-    ? `${props.transcodeDone && CONTENT_SERVICE_URL + props.thumbnailUrl}`
+  const srcImage = props.thumbnailUrl
+    ? CONTENT_SERVICE_URL + props.thumbnailUrl
     : defaultThumbnail;
   return (
     <>
