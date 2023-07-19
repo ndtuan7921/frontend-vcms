@@ -68,7 +68,7 @@ export default function Upload() {
         method: "POST",
         headers: {
           // "Access-Control-Allow-Origin": "*",
-          "Content-Type": "multipart/form-data",
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           title: title,
