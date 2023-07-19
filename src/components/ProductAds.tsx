@@ -21,7 +21,8 @@ const uppy = new Uppy({
 });
 
 function ProductAds(props: any) {
-  const { handleClick } = props;
+  console.log(props);
+  const { handleClick, videoId } = props;
   const [productAds, setProductAds] = useState<any>([]);
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
@@ -69,32 +70,35 @@ function ProductAds(props: any) {
     });
 
     const modifiedSubtitleContent = (webvtt as any).compile(parsedSubtitle);
+    console.log(modifiedSubtitleContent);
     const modifiedSubtitleBlob = new Blob([modifiedSubtitleContent], {
       type: "text/vtt",
     });
     const modifiedSubtitleFile = new File(
       [modifiedSubtitleContent],
-      "subtitles.vtt",
-      {
-        type: "text/vtt",
-      }
+      "subtitles.vtt"
+      // {
+      //   type: "text/vtt",
+      // }
     );
-    const downloadLink = URL.createObjectURL(modifiedSubtitleBlob);
-    const a = document.createElement("a");
-    a.href = downloadLink;
-    a.download = "subtitles.vtt";
-    a.click();
+    // Download vtt file
+    // const downloadLink = URL.createObjectURL(modifiedSubtitleBlob);
+    // const a = document.createElement("a");
+    // a.href = downloadLink;
+    // a.download = "subtitles.vtt";
+    // a.click();
 
     // Create FormData to send the file
     const formData = new FormData();
-    formData.append("subtitleFile", modifiedSubtitleBlob, "subtitles.vtt");
+    formData.append("subtitleFile", modifiedSubtitleFile);
+    formData.append("videoId", videoId);
     try {
       // Send the FormData to the backend using fetch
       const response = await fetch(`${CONTENT_SERVICE_URL}/api/vtts/upload`, {
         method: "POST",
-        headers: {
-          "Content-Type": "text/vtt",
-        },
+        // headers: {
+        //   "Content-Type": "multipart/form-data",
+        // },
         body: formData,
       });
 
@@ -104,6 +108,7 @@ function ProductAds(props: any) {
 
       // Handle the response if needed
       const data = await response.json();
+      alert("File uploaded successfully");
       console.log("File uploaded successfully:", data);
     } catch (error) {
       // Handle any error that occurred during the upload
@@ -117,6 +122,7 @@ function ProductAds(props: any) {
         {productAds.map((item: any) => {
           return (
             <Button
+              key={item.startTime}
               onClick={() => handleClick(item.startTime)}
               variant="outlined"
             >

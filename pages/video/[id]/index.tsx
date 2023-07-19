@@ -49,6 +49,17 @@ function VideoDetailPage() {
     }
   }, [router]);
 
+  useEffect(() => {
+    const fetchVTT = async () => {
+      const videoId = router.query.id;
+      const data = await fetch(`${CONTENT_SERVICE_URL}/api/vtts/${videoId}`);
+      const json = await data.json();
+      console.log(json);
+    };
+
+    fetchVTT().catch(console.error);
+  }, []);
+
   const handleButtonClick = (seconds: number) => {
     playerRef.current?.seekTo(seconds);
   };
@@ -65,7 +76,10 @@ function VideoDetailPage() {
             <Typography variant="body1">{videoData?.description}</Typography>
           </Stack>
           <Stack>
-            <ProductAds handleClick={handleButtonClick} />
+            <ProductAds
+              handleClick={handleButtonClick}
+              videoId={router.query.id}
+            />
           </Stack>
         </>
       ) : (
