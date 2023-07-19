@@ -30,13 +30,12 @@ const uppy = new Uppy({
 });
 
 export default function Upload() {
-  // const [title, setTitle] = useState("");
-  // const [description, setDescription] = useState("");
   const titleRef = useRef<HTMLInputElement | null>(null);
   const descriptionRef = useRef<HTMLInputElement | null>(null);
   const [isVideoUploaded, setIsVideoUploaded] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [videoData, setVideoData] = useState<any>({});
+  const [thumbnail, setThumbnail] = useState<any>();
 
   // Create FormData to send the file
   const formData = new FormData();
@@ -49,7 +48,8 @@ export default function Upload() {
 
   uppy.on("upload-success", function (file, upload) {
     console.log(file);
-    formData.append("thumbnail", file!.data.name);
+    setThumbnail(file!.data.name);
+    // formData.append("thumbnail", file!.data.name);
   });
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -76,12 +76,12 @@ export default function Upload() {
           // "Access-Control-Allow-Origin": "*",
           "Content-Type": "multipart/form-data",
         },
-        // body: JSON.stringify({
-        //   title: title,
-        //   description: description,
-        //   ...videoData,
-        // }),
-        body: formData,
+        body: JSON.stringify({
+          title: title,
+          description: description,
+          ...videoData,
+          thumbnail: thumbnail,
+        }),
       });
 
       if (!response.ok) {
@@ -89,8 +89,6 @@ export default function Upload() {
       }
 
       // Reset form values
-      // setTitle("");
-      // setDescription("");
       setIsSubmitted((state) => !state);
       titleRef.current!.value = "";
       descriptionRef.current!.value = "";
