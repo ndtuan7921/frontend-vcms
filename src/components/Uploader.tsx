@@ -47,6 +47,8 @@ function Uploader(props: UploaderProps) {
   }, [isSubmitted, setIsSubmitted]);
 
   uppy.on("file-added", (file) => {
+    uppy.setMeta({ uploadType: "video" });
+
     uppy.setFileMeta(file.id, {
       name: file.name,
     });

@@ -10,7 +10,7 @@ import { useRef, useState } from "react";
 import { Uppy, UppyFile } from "@uppy/core";
 import { Dashboard } from "@uppy/react";
 import Tus from "@uppy/tus";
-import { CONTENT_SERVICE_URL } from "../env.config";
+import { CONTENT_SERVICE_URL, UPLOAD_SERVICE_URL } from "../env.config";
 
 const FormfieldWrapper = styled(Box)(({ theme }) => ({
   margin: "8px 0",
@@ -26,7 +26,7 @@ const uppy = new Uppy({
     allowedFileTypes: ["image/*"],
   },
 }).use(Tus, {
-  endpoint: TUS_ENDPOINT,
+  endpoint: UPLOAD_SERVICE_URL + "/upload",
 });
 
 export default function Upload() {
@@ -43,9 +43,13 @@ export default function Upload() {
 
   console.log(videoData);
 
+  uppy.on("file-added", (file) => {
+    uppy.setMeta({ uploadType: "thumbnail" });
+  });
+
   uppy.on("upload-success", function (file, upload) {
     console.log(file);
-    formData.append("thumbnail", file!.data);
+    formData.append("thumbnail", file!.data.name);
   });
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
