@@ -1,8 +1,9 @@
-import React, { memo } from "react";
 import ReactPlayer, { ReactPlayerProps } from "react-player";
 
 function Player({ url, playerRef, ...props }) {
-  return <ReactPlayer url={url} ref={playerRef} {...props} controls />;
+  return (
+    <ReactPlayer url={url} ref={playerRef} {...props} playing={true} controls />
+  );
 }
 
-export default memo(Player);
+export default Player;

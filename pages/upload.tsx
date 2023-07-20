@@ -1,12 +1,12 @@
 import Container from "@mui/material/Container";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import { Stack, TextField } from "@mui/material";
+import { Stack, TextField, Typography } from "@mui/material";
 import styled from "@emotion/styled";
 import Uploader from "../src/components/Uploader";
 import "@uppy/core/dist/style.min.css";
 import "@uppy/dashboard/dist/style.min.css";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Uppy, UppyFile } from "@uppy/core";
 import { Dashboard } from "@uppy/react";
 import Tus from "@uppy/tus";
@@ -37,10 +37,14 @@ export default function Upload() {
   const [videoData, setVideoData] = useState<any>({});
   const [thumbnail, setThumbnail] = useState<any>();
 
-  // Create FormData to send the file
-  const formData = new FormData();
-
   console.log(videoData);
+
+  useEffect(() => {
+    if (isSubmitted) {
+      uppy.cancelAll();
+      setIsSubmitted(false);
+    }
+  }, [isSubmitted, setIsSubmitted]);
 
   uppy.on("file-added", (file) => {
     uppy.setMeta({ uploadType: "thumbnail" });
@@ -49,7 +53,6 @@ export default function Upload() {
   uppy.on("upload-success", function (file, upload) {
     console.log(file);
     setThumbnail(file!.data.name);
-    // formData.append("thumbnail", file!.data.name);
   });
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -67,7 +70,6 @@ export default function Upload() {
       const response = await fetch(`${CONTENT_SERVICE_URL}/api/videos`, {
         method: "POST",
         headers: {
-          // "Access-Control-Allow-Origin": "*",
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
@@ -108,7 +110,7 @@ export default function Upload() {
           }}
         >
           <Stack
-            direction={"row"}
+            direction={"column"}
             alignItems="flex-start"
             justifyContent={"space-between"}
           >
@@ -118,8 +120,6 @@ export default function Upload() {
                   id="outlined-basic"
                   label="Title"
                   variant="outlined"
-                  // value={title}
-                  // onChange={(e) => setTitle(e.target.value)}
                   inputRef={titleRef}
                   required
                   fullWidth
@@ -130,21 +130,25 @@ export default function Upload() {
                   id="outlined-basic"
                   label="Description"
                   variant="outlined"
-                  // value={description}
-                  // onChange={(e) => setDescription(e.target.value)}
                   inputRef={descriptionRef}
                   fullWidth
                 />
               </FormfieldWrapper>
             </Stack>
-            <Dashboard uppy={uppy} proudlyDisplayPoweredByUppy={false} />
-
-            <Uploader
-              handleUpload={setIsVideoUploaded}
-              handleVideoData={setVideoData}
-              isSubmitted={isSubmitted}
-              setIsSubmitted={setIsSubmitted}
-            />
+            <Stack spacing={2} direction={"column"}>
+              <Uploader
+                handleUpload={setIsVideoUploaded}
+                handleVideoData={setVideoData}
+                isSubmitted={isSubmitted}
+                setIsSubmitted={setIsSubmitted}
+              />
+              {isVideoUploaded && (
+                <Stack spacing={1}>
+                  <Typography variant="h6">Thumbnail Upload</Typography>
+                  <Dashboard uppy={uppy} proudlyDisplayPoweredByUppy={false} />
+                </Stack>
+              )}
+            </Stack>
           </Stack>
 
           <FormfieldWrapper>

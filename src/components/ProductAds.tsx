@@ -3,11 +3,11 @@ import React, { useRef, useState } from "react";
 import { Uppy } from "@uppy/core";
 import { Dashboard } from "@uppy/react";
 import Tus from "@uppy/tus";
-// import WebVTT from "node-webvtt";
 import * as webvtt from "node-webvtt";
 import "@uppy/core/dist/style.min.css";
 import "@uppy/dashboard/dist/style.min.css";
-import { CONTENT_SERVICE_URL } from "../../env.config";
+import { CONTENT_SERVICE_URL, VTT_SERVICE_URL } from "../../env.config";
+import convertToSeconds from "../utils/convertToSeconds";
 
 const uppy = new Uppy({
   debug: true,
@@ -21,23 +21,19 @@ const uppy = new Uppy({
 });
 
 function ProductAds(props: any) {
-  console.log(props);
-  const { handleClick, videoId } = props;
+  const { handleClick, videoId, handleVttFile } = props;
   const [productAds, setProductAds] = useState<any>([]);
-  const [startTime, setStartTime] = useState("");
-  const [endTime, setEndTime] = useState("");
-  const [text, setText] = useState("");
-
-  const convertToSeconds = (timeString: string) => {
-    const timeParts = timeString.split(":");
-    const hours = parseInt(timeParts[0], 10);
-    const minutes = parseInt(timeParts[1], 10);
-    const secs = parseInt(timeParts[2], 10);
-
-    return hours * 3600 + minutes * 60 + secs;
-  };
+  const startTimeRef = useRef<HTMLInputElement | null>(null);
+  const endTimeRef = useRef<HTMLInputElement | null>(null);
+  const textRef = useRef<HTMLInputElement | null>(null);
 
   const handleAddNew = () => {
+    const startTime = startTimeRef.current!.value;
+    const endTime = endTimeRef.current!.value;
+    const text = textRef.current?.value;
+
+    if (!startTime || !endTime) return;
+
     const newProductAds = {
       startTime: convertToSeconds(startTime),
       endTime: convertToSeconds(endTime),
@@ -48,9 +44,7 @@ function ProductAds(props: any) {
 
   function handleSubmit(event: any) {
     event.preventDefault();
-    // console.log({ startTime, endTime, text });
   }
-  console.log(productAds);
 
   const handleGenerateSubtitleFile = async () => {
     const parsedSubtitle = {
@@ -66,27 +60,19 @@ function ProductAds(props: any) {
         text: subtitle.text,
         styles: "",
       };
-      parsedSubtitle.cues.push(cue);
+      parsedSubtitle.cues.push(cue as never);
     });
 
     const modifiedSubtitleContent = (webvtt as any).compile(parsedSubtitle);
-    console.log(modifiedSubtitleContent);
-    const modifiedSubtitleBlob = new Blob([modifiedSubtitleContent], {
-      type: "text/vtt",
-    });
+
+    // const modifiedSubtitleBlob = new Blob([modifiedSubtitleContent], {
+    //   type: "text/vtt",
+    // });
+
     const modifiedSubtitleFile = new File(
       [modifiedSubtitleContent],
       "subtitles.vtt"
-      // {
-      //   type: "text/vtt",
-      // }
     );
-    // Download vtt file
-    // const downloadLink = URL.createObjectURL(modifiedSubtitleBlob);
-    // const a = document.createElement("a");
-    // a.href = downloadLink;
-    // a.download = "subtitles.vtt";
-    // a.click();
 
     // Create FormData to send the file
     const formData = new FormData();
@@ -96,9 +82,6 @@ function ProductAds(props: any) {
       // Send the FormData to the backend using fetch
       const response = await fetch(`${CONTENT_SERVICE_URL}/api/vtts/upload`, {
         method: "POST",
-        // headers: {
-        //   "Content-Type": "multipart/form-data",
-        // },
         body: formData,
       });
 
@@ -111,11 +94,17 @@ function ProductAds(props: any) {
       alert("File uploaded successfully");
       console.log("File uploaded successfully:", data);
     } catch (error) {
-      // Handle any error that occurred during the upload
       console.error("Error uploading file:", error);
     }
-  };
 
+    try {
+      const data = await fetch(`${VTT_SERVICE_URL}/api/vtts/${videoId}`);
+      const json = await data.json();
+      handleVttFile(VTT_SERVICE_URL + json.vttUrl);
+    } catch (error) {
+      console.error("Error fetching VTT file:", error);
+    }
+  };
   return (
     <>
       <Stack spacing={4} mb={4} direction={"row"}>
@@ -145,37 +134,27 @@ function ProductAds(props: any) {
               id="outlined-basic"
               label="Start time"
               variant="outlined"
-              value={startTime}
-              onChange={(e) => setStartTime(e.target.value)}
+              // value={startTime}
+              // onChange={(e) => setStartTime(e.target.value)}
               required
               fullWidth
+              inputRef={startTimeRef}
             />
             <TextField
               id="outlined-basic"
               label="End time"
               variant="outlined"
-              value={endTime}
-              onChange={(e) => setEndTime(e.target.value)}
               required
               fullWidth
+              inputRef={endTimeRef}
             />
           </Stack>
-          {/* <Stack spacing={2} direction={"row"}>
-            <Dashboard
-              uppy={uppy}
-              //   hideUploadButton
-              proudlyDisplayPoweredByUppy={false}
-              width={400}
-              height={100}
-            />
-          </Stack> */}
           <TextField
             id="outlined-basic"
             label="description"
             variant="outlined"
             fullWidth
-            value={text}
-            onChange={(e) => setText(e.target.value)}
+            inputRef={textRef}
           />
           <Button variant="contained" onClick={handleAddNew}>
             Add new

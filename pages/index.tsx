@@ -34,15 +34,11 @@ export default function Home() {
       <Typography variant="h4" component="h1" gutterBottom>
         ALL UPLOADED VIDEOS
       </Typography>
-      <Link href={"/test"}>
-        <Typography variant="h4" component="h1" gutterBottom>
-          Test
-        </Typography>
-      </Link>
       {videos.length &&
         videos.map((video) => {
           return (
             <Link
+              key={video.id}
               href={`/video/${video.id}`}
               style={{ width: "90%", textDecoration: "none", color: "inherit" }}
             >

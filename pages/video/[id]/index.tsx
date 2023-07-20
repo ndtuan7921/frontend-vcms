@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { CONTENT_SERVICE_URL } from "../../../env.config";
 import { Container, Stack, Typography } from "@mui/material";
 import ProductAds from "../../../src/components/ProductAds";
+import parseMasterPlaylist from "../../../src/utils/parseMaterPlaylist";
 const Player = dynamic(() => import("../../../src/components/Player"), {
   ssr: false,
 });
@@ -24,53 +25,121 @@ interface VideoDataProps {
 function VideoDetailPage() {
   const playerRef = useRef<any>();
   const [videoData, setVideoData] = useState<VideoDataProps>();
+  const [vttFile, setVttFile] = useState("");
   const [url, setUrl] = useState("");
+  const [playerKey, setPlayerKey] = useState<number>(0);
+  const [masterPlaylist, setMasterPlaylist] = useState<any>(null);
+  const [selectedResolution, setSelectedResolution] = useState<any>(null);
+  const [currentTime, setCurrentTime] = useState(0);
   const router = useRouter();
 
-  useEffect(() => {
-    const fetchData = async () => {
-      if (router.query.id) {
-        const videoId = router.query.id;
-        const data = await fetch(
-          `${CONTENT_SERVICE_URL}/api/videos/${videoId}`
-        );
-        const json = await data.json();
-        console.log(json);
-        setVideoData(json);
-        setUrl(
-          json.transcodeDone
-            ? `${CONTENT_SERVICE_URL + json.manifestUrl}`
-            : `${CONTENT_SERVICE_URL + json.videoUrl}`
-        );
-      }
-    };
-    if (router.isReady) {
-      fetchData().catch(console.error);
+  const fetchVideoData = async () => {
+    const videoId = router.query.id;
+    try {
+      const response = await fetch(
+        `${CONTENT_SERVICE_URL}/api/videos/${videoId}`
+      );
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error("Error fetching video data", error);
     }
-  }, [router]);
+  };
 
   useEffect(() => {
-    const fetchVTT = async () => {
-      const videoId = router.query.id;
-      const data = await fetch(`${CONTENT_SERVICE_URL}/api/vtts/${videoId}`);
-      const json = await data.json();
-      console.log(json);
+    const loadVideoData = async () => {
+      const data = await fetchVideoData();
+      // console.log(">>>>>>\n", data);
+      setVideoData(data);
+      setUrl(
+        data.transcodeDone
+          ? `${CONTENT_SERVICE_URL + data.manifestUrl}`
+          : `${CONTENT_SERVICE_URL + data.videoUrl}`
+      );
     };
+    router.isReady && router.query.id && loadVideoData();
+  }, [router.isReady, router.query.id]);
 
-    fetchVTT().catch(console.error);
-  }, []);
+  const fetchMasterPlaylist = async () => {
+    try {
+      const response = await fetch(url);
+      const playlist = await response.text();
+      return playlist;
+    } catch (error) {
+      console.error("Error fetching master playlist:", error);
+    }
+  };
 
-  const handleButtonClick = (seconds: number) => {
+  useEffect(() => {
+    const loadPlaylist = async () => {
+      const playlist = await fetchMasterPlaylist();
+      setMasterPlaylist(parseMasterPlaylist(playlist));
+      setSelectedResolution(parseMasterPlaylist(playlist)[0]);
+    };
+    url && loadPlaylist();
+  }, [url]);
+
+  const handleResolutionChange = (resolution: any) => {
+    setSelectedResolution(resolution);
+    playerRef.current.getCurrentTime() &&
+      setCurrentTime(playerRef.current.getCurrentTime());
+  };
+
+  const handleButtonClick = async (seconds: number) => {
     playerRef.current?.seekTo(seconds);
   };
-  // console.log(videoData);
 
-  console.log(url);
+  useEffect(() => {
+    setPlayerKey((prevKey) => prevKey + 1);
+  }, [vttFile, url]);
+
+  const baseURL = `${CONTENT_SERVICE_URL}/manifest/${videoData?.fileName.replace(
+    ".mp4",
+    ""
+  )}/`;
+
   return (
     <Container>
       {videoData ? (
         <>
-          <Player url={url} playerRef={playerRef} />
+          <Player
+            key={playerKey}
+            playing
+            url={
+              selectedResolution && selectedResolution.url
+                ? baseURL + selectedResolution.uri
+                : url
+            }
+            playerRef={playerRef}
+            onStart={() => playerRef.current?.seekTo(currentTime)}
+            config={{
+              file: {
+                attributes: {
+                  crossOrigin: "anonymous",
+                },
+                tracks: [
+                  {
+                    kind: "subtitles",
+                    src: vttFile,
+                    default: true,
+                    mode: "showing",
+                  },
+                ],
+              },
+            }}
+          />
+          <div>
+            {masterPlaylist &&
+              masterPlaylist.map((item: any) => (
+                <button
+                  key={item.uri}
+                  onClick={() => handleResolutionChange(item)}
+                  disabled={item.uri === selectedResolution.uri}
+                >
+                  {item.resolution}
+                </button>
+              ))}
+          </div>
           <Stack spacing={1} mb={4} mt={4}>
             <Typography variant="h4">{videoData?.title}</Typography>
             <Typography variant="body1">{videoData?.description}</Typography>
@@ -79,6 +148,7 @@ function VideoDetailPage() {
             <ProductAds
               handleClick={handleButtonClick}
               videoId={router.query.id}
+              handleVttFile={setVttFile}
             />
           </Stack>
         </>

@@ -3,6 +3,7 @@ import { Dashboard } from "@uppy/react";
 import Tus from "@uppy/tus";
 import React, { Dispatch, SetStateAction, useEffect } from "react";
 import { UPLOAD_SERVICE_URL } from "../../env.config";
+import { Stack, Typography } from "@mui/material";
 
 const TUS_ENDPOINT = "https://tusd.tusdemo.net/files/";
 
@@ -69,7 +70,12 @@ function Uploader(props: UploaderProps) {
     handleUpload(false);
   });
 
-  return <Dashboard uppy={uppy} proudlyDisplayPoweredByUppy={false} />;
+  return (
+    <Stack spacing={1}>
+      <Typography variant="h6">Video Upload</Typography>
+      <Dashboard uppy={uppy} proudlyDisplayPoweredByUppy={false} />
+    </Stack>
+  );
 }
 
 export default Uploader;
