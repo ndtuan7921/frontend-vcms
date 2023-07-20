@@ -1,6 +1,6 @@
 import dynamic from "next/dynamic";
 import { useRouter } from "next/router";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { CONTENT_SERVICE_URL } from "../../../env.config";
 import { Container, Stack, Typography } from "@mui/material";
 import ProductAds from "../../../src/components/ProductAds";
@@ -27,7 +27,7 @@ function VideoDetailPage() {
   const [videoData, setVideoData] = useState<VideoDataProps>();
   const [vttFile, setVttFile] = useState("");
   const [url, setUrl] = useState("");
-  const [playerKey, setPlayerKey] = useState<number>(0);
+  const [playerKey, setPlayerKey] = useState("");
   const [masterPlaylist, setMasterPlaylist] = useState<any>(null);
   const [selectedResolution, setSelectedResolution] = useState<any>(null);
   const [currentTime, setCurrentTime] = useState(0);
@@ -49,7 +49,6 @@ function VideoDetailPage() {
   useEffect(() => {
     const loadVideoData = async () => {
       const data = await fetchVideoData();
-      // console.log(">>>>>>\n", data);
       setVideoData(data);
       setUrl(
         data.transcodeDone
@@ -89,44 +88,48 @@ function VideoDetailPage() {
     playerRef.current?.seekTo(seconds);
   };
 
-  useEffect(() => {
-    setPlayerKey((prevKey) => prevKey + 1);
-  }, [vttFile, url]);
-
   const baseURL = `${CONTENT_SERVICE_URL}/manifest/${videoData?.fileName.replace(
     ".mp4",
     ""
   )}/`;
+
+  const playerURL =
+    selectedResolution && selectedResolution.uri
+      ? baseURL + selectedResolution.uri
+      : url;
+
+  // useEffect(() => {
+  //   setPlayerKey((key) => key + 1);
+  // }, [vttFile]);
+  const config = useMemo(() => {
+    return {
+      file: {
+        attributes: {
+          crossOrigin: "anonymous",
+        },
+        tracks: [
+          {
+            kind: "subtitles",
+            src: vttFile,
+            default: true,
+            mode: "showing",
+          },
+        ],
+      },
+    };
+  }, [vttFile]);
 
   return (
     <Container>
       {videoData ? (
         <>
           <Player
-            key={playerKey}
+            key={vttFile}
             playing
-            url={
-              selectedResolution && selectedResolution.url
-                ? baseURL + selectedResolution.uri
-                : url
-            }
+            url={playerURL}
             playerRef={playerRef}
             onStart={() => playerRef.current?.seekTo(currentTime)}
-            config={{
-              file: {
-                attributes: {
-                  crossOrigin: "anonymous",
-                },
-                tracks: [
-                  {
-                    kind: "subtitles",
-                    src: vttFile,
-                    default: true,
-                    mode: "showing",
-                  },
-                ],
-              },
-            }}
+            config={config}
           />
           <div>
             {masterPlaylist &&
@@ -147,7 +150,7 @@ function VideoDetailPage() {
           <Stack>
             <ProductAds
               handleClick={handleButtonClick}
-              videoId={router.query.id}
+              videoId={router.query.id && router.query.id}
               handleVttFile={setVttFile}
             />
           </Stack>

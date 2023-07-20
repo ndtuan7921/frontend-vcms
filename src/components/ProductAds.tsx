@@ -80,7 +80,7 @@ function ProductAds(props: any) {
     formData.append("videoId", videoId);
     try {
       // Send the FormData to the backend using fetch
-      const response = await fetch(`${CONTENT_SERVICE_URL}/api/vtts/upload`, {
+      const response = await fetch(`${VTT_SERVICE_URL}/api/vtts/upload`, {
         method: "POST",
         body: formData,
       });
