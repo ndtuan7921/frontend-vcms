@@ -1,0 +1,17 @@
+# upload video
+- ...
+
+# upload thumbnail
+- img (file)
+- fileName (of video)
+
+# upload metadata
+- title
+- description
+- fileName (of video)
+- fileId (of video)
+- thumbnail (of thumbnail / string)
+
+# upload vtt
+- vtt (file)
+- id (of video)

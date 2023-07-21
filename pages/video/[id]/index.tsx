@@ -37,14 +37,15 @@ interface VideoDataProps {
 function VideoDetailPage() {
   const playerRef = useRef<any>();
   const [videoData, setVideoData] = useState<VideoDataProps>();
-  const [vttFile, setVttFile] = useState("");
+  const [vttFile, setVttFile] = useState<any>(null);
   const [url, setUrl] = useState("");
   const [playerKey, setPlayerKey] = useState("");
   const [masterPlaylist, setMasterPlaylist] = useState<any>(null);
   const [selectedResolution, setSelectedResolution] = useState<any>(null);
   const [currentTime, setCurrentTime] = useState(0);
   const router = useRouter();
-  const [vttData, setVttData] = useState<any>([]);
+  const [vttData, setVttData] = useState<any>(null);
+  const [isVTTSubmited, setIsVTTSubmited] = useState(false);
 
   const feetchVTTFile = async () => {
     const videoId = router.query.id;
@@ -62,8 +63,8 @@ function VideoDetailPage() {
       const data = await feetchVTTFile();
       setVttFile(VTT_SERVICE_URL + data.vttUrl);
     };
-    router.isReady && router.query.id && loadVTTFile();
-  }, [vttData, router.isReady, router.query.id]);
+    router.query.id && loadVTTFile();
+  });
 
   const fetchVTTData = async () => {
     try {
@@ -83,8 +84,6 @@ function VideoDetailPage() {
     };
     vttFile && loadVTTData();
   }, [vttFile]);
-
-  console.log(vttData);
 
   const fetchVideoData = async () => {
     const videoId = router.query.id;
@@ -168,7 +167,7 @@ function VideoDetailPage() {
       },
     };
   }, [vttFile]);
-
+  console.log("vttData\n", vttData);
   return (
     <Container>
       {videoData ? (
@@ -230,7 +229,8 @@ function VideoDetailPage() {
             <ProductAds
               handleClick={handleButtonClick}
               videoId={router.query.id && router.query.id}
-              handleVttFile={setVttFile}
+              handleVttFile={setIsVTTSubmited}
+              vttProductAds={vttData}
             />
           </Stack>
         </>

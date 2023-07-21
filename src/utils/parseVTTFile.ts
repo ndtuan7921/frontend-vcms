@@ -5,6 +5,13 @@ export function parseWebVtt(webvttContent: string) {
 
   return cues.map((cue: any) => {
     const [name, description, price, imgURL] = cue.text.split("\n");
-    return { startTime: cue.start, name, description, price, imgURL };
+    return {
+      startTime: cue.start,
+      endTime: cue.end,
+      name,
+      description,
+      price,
+      imgURL,
+    };
   });
 }

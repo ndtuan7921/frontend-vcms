@@ -35,8 +35,8 @@ const uppy = new Uppy({
 });
 
 function ProductAds(props: any) {
-  const { handleClick, videoId, handleVttFile } = props;
-  const [productAds, setProductAds] = useState<any>([]);
+  const { handleClick, videoId, handleVttFile, vttProductAds } = props;
+  const [productAds, setProductAds] = useState<any>(vttProductAds);
   const startTimeRef = useRef<HTMLInputElement | null>(null);
   const endTimeRef = useRef<HTMLInputElement | null>(null);
   const nameRef = useRef<HTMLInputElement | null>(null);
@@ -57,7 +57,7 @@ function ProductAds(props: any) {
   uppy.on("upload-success", function (file, upload) {
     setImgURL(VTT_SERVICE_URL + "/vtt-image/" + file!.name);
   });
-
+  console.log("productAds\n", productAds);
   const handleAddNew = () => {
     const startTime = startTimeRef.current!.value;
     const endTime = endTimeRef.current!.value;
@@ -70,13 +70,18 @@ function ProductAds(props: any) {
     const newProductAds = {
       startTime: convertToSeconds(startTime),
       endTime: convertToSeconds(endTime),
-      name: name,
-      description: description,
-      price: price,
-      imgURL: imgURL,
+      name,
+      description,
+      price,
+      imgURL,
     };
     setProductAds([...productAds, newProductAds]);
     uppy.cancelAll();
+    startTimeRef.current!.value = "";
+    endTimeRef.current!.value = "";
+    nameRef.current!.value = "";
+    desRef.current!.value = "";
+    priceRef.current!.value = "";
   };
 
   function handleSubmit(event: any) {
@@ -125,21 +130,12 @@ function ProductAds(props: any) {
       if (!response.ok) {
         throw new Error("Failed to upload file");
       }
-
       // Handle the response if needed
       const data = await response.json();
       alert("File uploaded successfully");
       console.log("File uploaded successfully:", data);
     } catch (error) {
       console.error("Error uploading file:", error);
-    }
-
-    try {
-      const data = await fetch(`${VTT_SERVICE_URL}/api/vtts/${videoId}`);
-      const json = await data.json();
-      handleVttFile(VTT_SERVICE_URL + json.vttUrl);
-    } catch (error) {
-      console.error("Error fetching VTT file:", error);
     }
   };
 
