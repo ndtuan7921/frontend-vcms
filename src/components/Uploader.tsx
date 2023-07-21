@@ -15,14 +15,15 @@ const uppy = new Uppy({
     allowedFileTypes: ["video/*"],
   },
   onBeforeFileAdded: (currentFile, files) => {
-    const Tick = new Date().getTime();
+    const tick = new Date().getTime();
     const modifiedFile = {
       ...currentFile,
       name:
-        currentFile.name.replace(".mp4", "").replace(/\s/g, "_") +
+        currentFile.name.replace(/\s+/g, "").replace(/\.[^/.]+$/, "") +
         "_" +
-        Tick +
-        ".mp4",
+        tick +
+        "." +
+        currentFile.extension,
     };
     return modifiedFile;
   },

@@ -1,10 +1,22 @@
 import dynamic from "next/dynamic";
 import { useRouter } from "next/router";
-import React, { useEffect, useMemo, useRef, useState } from "react";
-import { CONTENT_SERVICE_URL } from "../../../env.config";
-import { Container, Stack, Typography } from "@mui/material";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { CONTENT_SERVICE_URL, VTT_SERVICE_URL } from "../../../env.config";
+import {
+  Box,
+  Button,
+  Container,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+  Stack,
+  Typography,
+} from "@mui/material";
 import ProductAds from "../../../src/components/ProductAds";
 import parseMasterPlaylist from "../../../src/utils/parseMaterPlaylist";
+import { parseWebVtt } from "../../../src/utils/parseVTTFile";
+import Image from "next/image";
+
 const Player = dynamic(() => import("../../../src/components/Player"), {
   ssr: false,
 });
@@ -32,6 +44,47 @@ function VideoDetailPage() {
   const [selectedResolution, setSelectedResolution] = useState<any>(null);
   const [currentTime, setCurrentTime] = useState(0);
   const router = useRouter();
+  const [vttData, setVttData] = useState<any>([]);
+
+  const feetchVTTFile = async () => {
+    const videoId = router.query.id;
+    try {
+      const data = await fetch(`${VTT_SERVICE_URL}/api/vtts/${videoId}`);
+      const json = await data.json();
+      return json;
+    } catch (error) {
+      console.error("Error fetching the WEBVTT file:", error);
+    }
+  };
+
+  useEffect(() => {
+    const loadVTTFile = async () => {
+      const data = await feetchVTTFile();
+      setVttFile(VTT_SERVICE_URL + data.vttUrl);
+    };
+    router.isReady && router.query.id && loadVTTFile();
+  }, [vttData, router.isReady, router.query.id]);
+
+  const fetchVTTData = async () => {
+    try {
+      const response = await fetch(vttFile);
+      const webvttContent = await response.text();
+      const result = parseWebVtt(webvttContent);
+      return result;
+    } catch (error) {
+      console.error("Error fetching or parsing the WEBVTT file:", error);
+    }
+  };
+
+  useEffect(() => {
+    const loadVTTData = async () => {
+      const data = await fetchVTTData();
+      setVttData(data);
+    };
+    vttFile && loadVTTData();
+  }, [vttFile]);
+
+  console.log(vttData);
 
   const fetchVideoData = async () => {
     const videoId = router.query.id;
@@ -84,7 +137,7 @@ function VideoDetailPage() {
       setCurrentTime(playerRef.current.getCurrentTime());
   };
 
-  const handleButtonClick = async (seconds: number) => {
+  const handleButtonClick = (seconds: number) => {
     playerRef.current?.seekTo(seconds);
   };
 
@@ -98,9 +151,6 @@ function VideoDetailPage() {
       ? baseURL + selectedResolution.uri
       : url;
 
-  // useEffect(() => {
-  //   setPlayerKey((key) => key + 1);
-  // }, [vttFile]);
   const config = useMemo(() => {
     return {
       file: {
@@ -131,6 +181,35 @@ function VideoDetailPage() {
             onStart={() => playerRef.current?.seekTo(currentTime)}
             config={config}
           />
+          <Stack spacing={2} m={8}>
+            {vttData &&
+              vttData.map((item: any) => {
+                return (
+                  <ListItemButton
+                    key={item.imgURL}
+                    sx={{ columnGap: "3rem", border: "1px solid #000" }}
+                    onClick={() => handleButtonClick(item.startTime)}
+                  >
+                    <ListItemIcon>
+                      <Image
+                        src={item.imgURL}
+                        alt={"card-img"}
+                        height={250}
+                        width={300}
+                      />
+                    </ListItemIcon>
+                    <ListItemText sx={{ rowGap: "1rem" }}>
+                      <Typography variant="h5">{item.name}</Typography>
+                      <Typography variant="h6">{item.description}</Typography>
+                      <Typography variant="h6">{item.price}</Typography>
+                      <Typography variant="h6" color={"error"}>
+                        play to {item.startTime}
+                      </Typography>
+                    </ListItemText>
+                  </ListItemButton>
+                );
+              })}
+          </Stack>
           <div>
             {masterPlaylist &&
               masterPlaylist.map((item: any) => (

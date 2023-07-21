@@ -1,13 +1,14 @@
-import { Button, Container, Stack, TextField, Typography } from "@mui/material";
-import React, { useRef, useState } from "react";
+import { Button, Stack, TextField, Typography } from "@mui/material";
+import { useRef, useState } from "react";
 import { Uppy } from "@uppy/core";
 import { Dashboard } from "@uppy/react";
 import Tus from "@uppy/tus";
 import * as webvtt from "node-webvtt";
 import "@uppy/core/dist/style.min.css";
 import "@uppy/dashboard/dist/style.min.css";
-import { CONTENT_SERVICE_URL, VTT_SERVICE_URL } from "../../env.config";
+import { UPLOAD_SERVICE_URL, VTT_SERVICE_URL } from "../../env.config";
 import convertToSeconds from "../utils/convertToSeconds";
+import Image from "next/image";
 
 const uppy = new Uppy({
   debug: true,
@@ -16,8 +17,21 @@ const uppy = new Uppy({
     maxNumberOfFiles: 1,
     allowedFileTypes: ["image/*"],
   },
+  onBeforeFileAdded: (currentFile, files) => {
+    const tick = new Date().getTime();
+    const modifiedFile = {
+      ...currentFile,
+      name:
+        currentFile.name.replace(/\s+/g, "").replace(/\.[^/.]+$/, "") +
+        "_" +
+        tick +
+        "." +
+        currentFile.extension,
+    };
+    return modifiedFile;
+  },
 }).use(Tus, {
-  endpoint: "",
+  endpoint: UPLOAD_SERVICE_URL + "/upload",
 });
 
 function ProductAds(props: any) {
@@ -25,21 +39,44 @@ function ProductAds(props: any) {
   const [productAds, setProductAds] = useState<any>([]);
   const startTimeRef = useRef<HTMLInputElement | null>(null);
   const endTimeRef = useRef<HTMLInputElement | null>(null);
-  const textRef = useRef<HTMLInputElement | null>(null);
+  const nameRef = useRef<HTMLInputElement | null>(null);
+  const desRef = useRef<HTMLInputElement | null>(null);
+  const priceRef = useRef<HTMLInputElement | null>(null);
+  const [imgURL, setImgURL] = useState("");
+
+  uppy.on("file-added", (file) => {
+    // console.log(file);
+
+    uppy.setMeta({ uploadType: "vtt_image" });
+
+    uppy.setFileMeta(file.id, {
+      name: file.name,
+    });
+  });
+
+  uppy.on("upload-success", function (file, upload) {
+    setImgURL(VTT_SERVICE_URL + "/vtt-image/" + file!.name);
+  });
 
   const handleAddNew = () => {
     const startTime = startTimeRef.current!.value;
     const endTime = endTimeRef.current!.value;
-    const text = textRef.current?.value;
+    const name = nameRef.current?.value;
+    const description = desRef.current?.value;
+    const price = priceRef.current?.value;
 
     if (!startTime || !endTime) return;
 
     const newProductAds = {
       startTime: convertToSeconds(startTime),
       endTime: convertToSeconds(endTime),
-      text: text,
+      name: name,
+      description: description,
+      price: price,
+      imgURL: imgURL,
     };
     setProductAds([...productAds, newProductAds]);
+    uppy.cancelAll();
   };
 
   function handleSubmit(event: any) {
@@ -57,7 +94,7 @@ function ProductAds(props: any) {
         identifier: (index + 1).toString(),
         start: subtitle.startTime,
         end: subtitle.endTime,
-        text: subtitle.text,
+        text: `${subtitle.name}\n${subtitle.description}\n${subtitle.price}\n${subtitle.imgURL}`,
         styles: "",
       };
       parsedSubtitle.cues.push(cue as never);
@@ -105,63 +142,64 @@ function ProductAds(props: any) {
       console.error("Error fetching VTT file:", error);
     }
   };
-  return (
-    <>
-      <Stack spacing={4} mb={4} direction={"row"}>
-        {productAds.map((item: any) => {
-          return (
-            <Button
-              key={item.startTime}
-              onClick={() => handleClick(item.startTime)}
-              variant="outlined"
-            >
-              play to {item.startTime}
-            </Button>
-          );
-        })}
-      </Stack>
-      <form onSubmit={handleSubmit}>
-        <Stack spacing={2} direction={"row"} mb={4}>
-          <Typography variant="h4">Insert Product Ads</Typography>
-          <Button onClick={handleGenerateSubtitleFile} variant="contained">
-            Submit .vtt file
-          </Button>
-        </Stack>
 
-        <Stack spacing={2} direction={"column"}>
-          <Stack spacing={2} direction={"row"}>
-            <TextField
-              id="outlined-basic"
-              label="Start time"
-              variant="outlined"
-              // value={startTime}
-              // onChange={(e) => setStartTime(e.target.value)}
-              required
-              fullWidth
-              inputRef={startTimeRef}
-            />
-            <TextField
-              id="outlined-basic"
-              label="End time"
-              variant="outlined"
-              required
-              fullWidth
-              inputRef={endTimeRef}
-            />
-          </Stack>
+  return (
+    <form onSubmit={handleSubmit}>
+      <Stack spacing={2} direction={"row"} mb={4}>
+        <Typography variant="h4">Insert Product Ads</Typography>
+        <Button onClick={handleGenerateSubtitleFile} variant="contained">
+          Submit .vtt file
+        </Button>
+      </Stack>
+
+      <Stack spacing={2} direction={"column"}>
+        <Stack spacing={2} direction={"row"}>
           <TextField
             id="outlined-basic"
-            label="description"
+            label="Start time"
             variant="outlined"
+            required
             fullWidth
-            inputRef={textRef}
+            inputRef={startTimeRef}
           />
-          <Button variant="contained" onClick={handleAddNew}>
-            Add new
-          </Button>
+          <TextField
+            id="outlined-basic"
+            label="End time"
+            variant="outlined"
+            required
+            fullWidth
+            inputRef={endTimeRef}
+          />
         </Stack>
-      </form>
-    </>
+        <TextField
+          id="outlined-basic"
+          label="Name"
+          required
+          variant="outlined"
+          fullWidth
+          inputRef={nameRef}
+        />
+        <TextField
+          id="outlined-basic"
+          label="description"
+          variant="outlined"
+          fullWidth
+          inputRef={desRef}
+        />
+        <TextField
+          id="outlined-basic"
+          label="Price"
+          required
+          variant="outlined"
+          fullWidth
+          inputRef={priceRef}
+        />
+        <Dashboard uppy={uppy} proudlyDisplayPoweredByUppy={false} />
+        <Button variant="contained" onClick={handleAddNew}>
+          Add new
+        </Button>
+      </Stack>
+    </form>
   );
 }
 

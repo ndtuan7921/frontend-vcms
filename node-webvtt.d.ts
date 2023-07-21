@@ -2,7 +2,7 @@ declare module "node-webvtt" {
   export function parse(
     vttString: string,
     callback: (error: Error | null, captions: Caption[]) => void
-  ): void;
+  ): any;
 
   export interface Caption {
     id: number;

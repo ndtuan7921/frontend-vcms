@@ -1,6 +1,7 @@
 import styled from "@emotion/styled";
 import {
   Box,
+  Chip,
   Divider,
   ListItemButton,
   ListItemIcon,
@@ -44,8 +45,9 @@ function VideoCard(props: VideoCardProps) {
           <Image src={srcImage} alt={"card-img"} height={250} width={300} />
         </ListItemIcon>
         <ListItemText sx={{ rowGap: "1rem" }}>
-          <TypoWrapper>
+          <TypoWrapper sx={{ display: "flex", gap: "1rem" }}>
             <Typography variant="h4">{props.title}</Typography>
+            {props.transcodeDone && <Chip label="transcoded" color="success" />}
           </TypoWrapper>
           <TypoWrapper>
             <Typography variant="h6">{props.description}</Typography>

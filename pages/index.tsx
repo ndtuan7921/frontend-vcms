@@ -13,14 +13,14 @@ export default function Home() {
 
   useEffect(() => {
     const fetchData = async () => {
-      const data = await fetch(`${CONTENT_SERVICE_URL}/api/videos`);
+      const data = await fetch(`${CONTENT_SERVICE_URL}/api/videos/all`);
       const json = await data.json();
-      console.log(json);
+      // console.log(json);
       setVideos(json);
     };
     fetchData().catch(console.error);
   }, []);
-  console.log(videos);
+  // console.log(videos);
   return (
     <Box
       sx={{
